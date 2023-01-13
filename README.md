@@ -26,7 +26,7 @@ python 的 **tensorrt** 通过 TensorRT Toolkit中提供的安装包安装
 python download_all_models.py
 ```
 
-## 导出模型
+### 导出模型
 ```shell
 python export.py --mode trt  # onnx：导出onnx模型， trt：导出onnx及tensorrt常规模型，end2end：导出onnx常规及end2end模型，并转化end2end的engine模型
                  --weights yolov8s.pt
@@ -75,10 +75,10 @@ python export.py --mode trt  # onnx：导出onnx模型， trt：导出onnx及ten
 ./yolo_export/yolov8s/yolov8s_end2end.pt     # 用于python部署
 ```
 
-## 推理
+### 推理
 
-### python
-由本项目生成的，不论是常规模型还是端到端模型，均可使用
+#### python
+由本项目生成的，不论是常规模型还是端到端模型，均可使用，不依赖原项目的函数功能
 ```shell
 python trt_infer.py --weight ./yolo_export/yolov8s/yolov8s.pt
                     --source path/to/your/video/file or (rtsp/rtmp/http)://xxx.xxx.xxx.xxx/live/xxx or 0
@@ -89,5 +89,5 @@ python trt_infer.py --weight ./yolo_export/yolov8s/yolov8s.pt
                     --nms 0.6      # NMS 目标框重合度阈值
 ```
 
-### c++
+#### c++
 即将推出，着急用可到其他项目中找找
