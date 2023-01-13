@@ -39,14 +39,14 @@ python export.py --mode trt
                  --opset 11
                  
                  # 以下为trt或end2end所需参数，如为onnx模式不用写
-                 --workspace 10   # (GB)
+                 --workspace 10   # 转换为tensorrt模型时最大使用的显存空间(GB)
                  --fp16           # int8, best
                  
                  # 以下为end2end所需参数(Batched_NMS中所需参数)，如为onnx或trt模式不用写
-                 --conf-thres 0.2
-                 --nms-thres 0.6
-                 --topk 2000
-                 --keep 100
+                 --conf-thres 0.2   # 置信度阈值
+                 --nms-thres 0.6    # NMS 目标框重合度阈值
+                 --topk 2000        # 选置信度最高的前K个目标框作为NMS的输入
+                 --keep 100         # NMS之后最多保留前K个置信度最高的结果
 ```
 
 不同模式导出不同模型，以yolov8s.pt为例
