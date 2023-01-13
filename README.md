@@ -18,6 +18,12 @@ python setup.py install
 ```
 python 的 **tensorrt** 通过 TensorRT Toolkit中提供的安装包安装
 
+```shell
+git clone https://github.com/LSH9832/yolov8_trt
+cd yolov8_trt
+pip install -r requirements.txt
+```
+
 ## 使用
 
 - 支持转onnx、tensorrt engine文件以及将engine文件与相关信息打包的，便于python中使用的pt文件
