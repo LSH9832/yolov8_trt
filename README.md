@@ -16,7 +16,7 @@ git clone https://github.com/NVIDIA-AI-IOT/torch2trt.git
 cd torch2trt
 python setup.py install
 ```
-python 的 **tensorrt** 通过 TensorRT Toolkit中提供的安装包安装
+python 的 **tensorrt** 通过 TensorRT Toolkit中提供的安装包安装，然后
 
 ```shell
 git clone https://github.com/LSH9832/yolov8_trt
