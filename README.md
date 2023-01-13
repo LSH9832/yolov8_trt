@@ -44,7 +44,7 @@ python download_all_models.py
 python export.py --mode trt
                  --weights yolov8s.pt
                  --batch 1
-                 --img-size 640 640
+                 --img-size 640 640    # 4:3视频流设为 480 640， 16:9视频流设为 384 640
                  --opset 11
                  
                  # 以下为trt或end2end所需参数，如为onnx模式不用写
