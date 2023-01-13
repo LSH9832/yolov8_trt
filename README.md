@@ -34,7 +34,7 @@ python download_all_models.py
 # mode有以下三个
 # onnx：导出onnx常规模型
 # trt：导出onnx及tensorrt常规模型
-# end2end：导出onnx常规及end2end模型，并转化end2end的engine模型
+# end2end：导出onnx常规模型，并通过其导出end2end模型，再转化为end2end的engine模型
 python export.py --mode trt
                  --weights yolov8s.pt
                  --batch 1
