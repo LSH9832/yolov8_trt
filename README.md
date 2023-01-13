@@ -7,7 +7,7 @@
 
 **注意** 
 
-- end2end模型要求TensorRT版本为8.0.0及以上
+- end2end模型要求TensorRT版本为8.0.0及以上（本人使用的是TensorRT-8.0.1.6.Windows10.x86_64.cuda-11.3.cudnn8.2）
 - 由于修改了原项目ultralytics中的一些函数，所以导出模型时不要将原项目代替本项目中的ultralytics文件夹
 
 其中 **torch2trt** 安装如下
