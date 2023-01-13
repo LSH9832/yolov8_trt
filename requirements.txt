@@ -1,0 +1,18 @@
+numpy
+onnx
+loguru
+opencv-python
+torch
+torch2trt     # see README.md
+tensorrt      # see README.md
+torchvision
+thop
+pandas
+requests
+pathlib
+pillow
+psutil
+tqdm
+pyyaml
+matplotlib
+omegaconf
