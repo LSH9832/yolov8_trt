@@ -58,7 +58,7 @@ if __name__ == '__main__':
 
         print(f"\rlatency: {int((t1 - t0) * 1000)}ms, "
               f"draw latency: {int((t2 - t1) * 1000)}ms, "
-              f"total latency: {int((time() - t_) * 1000)}ms", end="")
+              f"total latency: {int((time() - t_) * 1000)}ms", end="          ")
         if count:
             infer_time += t1 - t0
         count += 1

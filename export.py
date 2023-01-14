@@ -5,7 +5,24 @@ from ultralytics import YOLO
 def parser_args():
     import argparse
     parser = argparse.ArgumentParser("YOLOv8 exporter parser")
-    parser.add_argument("--mode", type=str, default="onnx", help="onnx, trt, end2end")
+    parser.add_argument("--mode", type=str, default="onnx", help="onnx, trt, end2end, onnx2trt, onnx2end2end")
+
+    # if mode in [onnx2trt, onnx2end2end], then provide onnx and yaml file:
+    """
+    yaml file contains the following message:
+    
+    batch_size: 1
+    pixel_range: 1            # image input normalized to [0, 1]
+    obj_conf_enabled: True    # use object prediction
+    img_size: [640, 640]      # height, width
+    input_name: ["input_0"]
+    output_name: ["output_0"]
+    names: [person, car, ...]
+    
+    """
+    parser.add_argument("--onnx", type=str, default="yolov8l.onnx", help="onnx file")
+    parser.add_argument("--cfg", type=str, default="yolov8l.yaml", help="config file")
+    # else:
     parser.add_argument("-w", "--weights", type=str, default="yolov8l.pt", help="weight file name")
     parser.add_argument("-b", "--batch", type=int, default=1, help="input batch size")
     parser.add_argument("-s", "--simplify", action="store_true", help="simplify onnx")
@@ -16,7 +33,7 @@ def parser_args():
     parser.add_argument("--opset", type=int, default=11, help="opset version")
     parser.add_argument("--dist", type=str, default="./yolo_export/")
 
-    # the followings are for trt mode and end2end mode
+    # the followings are for trt, end2end, onnx2trt, onnx2end2end mode
     parser.add_argument("--device", type=int, default=0)
     parser.add_argument("--workspace", type=float, default=8.0, help="export memory workspace(GB)")
 
@@ -25,7 +42,7 @@ def parser_args():
     parser.add_argument("--int8", action="store_true", help="int8")
     parser.add_argument("--best", action="store_true", help="best")
 
-    # the followings are for end2end mode
+    # the followings are for end2end, onnx2end2end mode
     parser.add_argument("--conf-thres", type=float, default=0.2, help="confidence threshold of End2End model")
     parser.add_argument("--nms-thres", type=float, default=0.6, help="NMS threshold of End2End model")
     parser.add_argument("--topk", type=int, default=2000, help="let top k results to be NMS inputs")
@@ -35,6 +52,9 @@ def parser_args():
 
 
 def export_onnx():
+    import os
+    import json
+    import yaml
 
     args = parser_args()
     mode = args.mode
@@ -49,60 +69,89 @@ def export_onnx():
     topk = args.topk
     keep = args.keep
 
-    model = YOLO(args.weights)
-    model.fuse()
-    args = model.export(
-        format="onnx",
-        imgsz=([args.img_size] * 2) if isinstance(args.img_size, int) else args.img_size,
-        dynamic=args.dynamic,
-        batch=args.batch,
-        opset=args.opset,
-        simplify=args.simplify,
-        dist=args.dist,
-        input_names=args.input_names,
-        output_names=args.output_names
-    )
+    if args.mode.startswith("onnx2"):
+        args.onnx = args.onnx.replace("\\", "/")
+        base = args.onnx.split("/")[-1][:-5]
+        args.f = os.path.join(args.dist, base, base).replace("\\", "/")
+        os.makedirs(os.path.dirname(args.f), exist_ok=True)
+        cfg = yaml.load(open(args.cfg), yaml.Loader)
 
-    names = [v for _, v in model.model.names.items()]
-    try:
-        import yaml
-        yaml_file = args.f + ".yaml"
-        yaml_data = {
-            "batch_size": args.batch,
-            "img_size": [*args.imgsz],
-            "input_name": [*args.input_names],
-            "output_name": [*args.output_names],
-            "names": names
-        }
-        # print(yaml_data)
-        yaml.dump(yaml_data, open(yaml_file, "w"), yaml.Dumper)
-    except Exception as e:
-        print(f"write yaml error: {e}")
-        raise
+        try:
+            yaml_file = args.cfg
+            json_file = args.f + ".json"
+            json_data = {
+                "batch_size": cfg["batch_size"],
+                "img_size": cfg["img_size"],
+                "input_name": cfg["input_name"][0],
+                "output_name": cfg["output_name"][0],
+                "pixel_range": cfg["pixel_range"],  # input image pixel value range: 0-1 or 0-255
+                "obj_conf_enabled": cfg["obj_conf_enabled"],
+                "classes": cfg["names"],
+                "end2end": False
+            }
+            # for k, v in json_data.items():
+            #     print(k, type(v))
+            json.dump(json_data, open(json_file, "w", encoding="utf8"))
+        except Exception as e:
+            print(f"write json error: {e}")
+            raise
 
-    # not support classification and segmentation now.
-    try:
-        import json
-        json_file = args.f + ".json"
-        json_data = {
-            "batch_size": args.batch,
-            "img_size": [*args.imgsz],
-            "input_name": args.input_names[0],
-            "output_name": args.output_names[0],
-            "pixel_range": 1,            # input image pixel value range: 0-1 or 0-255
-            "obj_conf_enabled": False,   # YOLOv8 use class conf only
-            "classes": names,
-            "end2end": False
-        }
-        # for k, v in json_data.items():
-        #     print(k, type(v))
-        json.dump(json_data, open(json_file, "w", encoding="utf8"))
-    except Exception as e:
-        print(f"write json error: {e}")
-        raise
+    else:
+        model = YOLO(args.weights)
+        model.fuse()
+        args = model.export(
+            format="onnx",
+            imgsz=([args.img_size] * 2) if isinstance(args.img_size, int) else args.img_size,
+            dynamic=args.dynamic,
+            batch=args.batch,
+            opset=args.opset,
+            simplify=args.simplify,
+            dist=args.dist,
+            input_names=args.input_names,
+            output_names=args.output_names
+        )
 
-    if mode == "trt":
-        args.onnx = args.f + ".onnx"
+        names = [v for _, v in model.model.names.items()]
+        try:
+            yaml_file = args.f + ".yaml"
+            yaml_data = {
+                "batch_size": args.batch,
+                "img_size": [*args.imgsz],
+                "input_name": [*args.input_names],
+                "output_name": [*args.output_names],
+                "pixel_range": 1,  # input image pixel value range: 0-1 or 0-255
+                "obj_conf_enabled": False,  # YOLOv8 use class conf only
+                "names": names
+            }
+            # print(yaml_data)
+            yaml.dump(yaml_data, open(yaml_file, "w"), yaml.Dumper)
+        except Exception as e:
+            print(f"write yaml error: {e}")
+            raise
+
+        # not support classification and segmentation now.
+        try:
+            json_file = args.f + ".json"
+            json_data = {
+                "batch_size": args.batch,
+                "img_size": [*args.imgsz],
+                "input_name": args.input_names[0],
+                "output_name": args.output_names[0],
+                "pixel_range": 1,            # input image pixel value range: 0-1 or 0-255
+                "obj_conf_enabled": False,   # YOLOv8 use class conf only
+                "classes": names,
+                "end2end": False
+            }
+            # for k, v in json_data.items():
+            #     print(k, type(v))
+            json.dump(json_data, open(json_file, "w", encoding="utf8"))
+        except Exception as e:
+            print(f"write json error: {e}")
+            raise
+
+    if mode.endswith("trt"):
+        if mode == "trt":
+            args.onnx = args.f + ".onnx"
         args.yaml = yaml_file
         args.workspace = workspace
         args.fp16 = fp16
@@ -111,8 +160,10 @@ def export_onnx():
         args.device = device
 
         onnx2trt(args)
-    elif mode == "end2end":
-        args.onnx = args.f + ".onnx"
+
+    elif mode.endswith("end2end"):
+        if mode == "end2end":
+            args.onnx = args.f + ".onnx"
         args.conf_thres = conf_thres
         args.nms_thres = nms_thres
         args.topk = topk
@@ -171,7 +222,7 @@ def end2end(args, json_data):
         "names": json_data["classes"],
         "img_size": json_data["img_size"],
         "batch_size": json_data["batch_size"],
-        "pixel_range": 1,
+        "pixel_range": json_data["pixel_range"],
         "end2end": True
     }
     torch.save(ckpt_data, args.f + "_end2end.pt")
@@ -210,9 +261,9 @@ def onnx2trt(args=None):
 
     name = args.onnx.replace("\\", "/").split("/")[-1][:-len(args.onnx.split(".")[-1])]
 
-    engine_file = osp.join(args.dist, name + "engine").replace("\\", "/")
-    pt_file = osp.join(args.dist, name + "pt").replace("\\", "/")
-    cls_file = osp.join(args.dist, name + "txt").replace("\\", "/")
+    engine_file = args.f + ".engine"
+    pt_file = args.f + ".pt"
+    cls_file = args.f + ".txt"
     params = yaml.load(open(args.yaml).read(), yaml.Loader)
 
     # Tensorrt 7.x.x
@@ -249,10 +300,12 @@ def onnx2trt(args=None):
                 "input_names": params["input_name"],
                 "output_names": params["output_name"]
             },
-            "names": params["names"],
             "img_size": params["img_size"],
             "batch_size": params["batch_size"],
-            "end2end": False
+            "pixel_range": params["pixel_range"],
+            "obj_conf_enabled": params["obj_conf_enabled"],
+            "end2end": False,
+            "names": params["names"],
         }
         class_str = ""
         for name in params["names"]:
