@@ -7,9 +7,11 @@
 ```python
 #                  批大小        预测框数量    x, y, w, h, obj_conf, label_scores
 outputs.shape = [batch_size, number_of_preds, 5 + number_of_classes]
+outputs.shape = [batch_size, 5 + number_of_classes, number_of_preds]
 
 # 或者                                         x, y, w, h, scores
 outputs.shape = [batch_size, number_of_preds, 4 + number_of_classes]
+outputs.shape = [batch_size, 4 + number_of_classes, number_of_preds]
 ```
 的其他目标检测模型的onnx文件转换为tensorrt的engine文件和便于python使用的pt文件.
 
@@ -51,28 +53,50 @@ python download_all_models.py
 
 ### 导出模型
 ```shell
-# mode有以下三个
-# onnx：导出onnx常规模型
-# trt：导出onnx及tensorrt常规模型
-# end2end：导出onnx常规模型，并通过其导出end2end模型，再转化为end2end的engine模型
+# mode有以下5个
+
+# 1. onnx：仅导出onnx常规模型
+
+# 2. trt：导出onnx及tensorrt常规模型
+# 3. end2end：导出onnx常规模型，并通过其导出end2end模型，再转化为end2end的engine模型
+
+# 4. onnx2trt: 其他非yolov8模型的onnx文件（未添加end2end结构）转换为tensorrt常规模型
+# 5. onnx2end2end: 其他非yolov8模型的onnx文件（未添加end2end结构）转换为端到端onnx模型，再转化为end2end的engine模型
 python export.py --mode trt
+
+                 # 如果是yolov8模型（trt模式或end2end模式），输入以下4个参数
                  --weights yolov8s.pt
                  --batch 1
                  --img-size 640 640    # 4:3视频流设为 480 640， 16:9视频流设为 384 640
                  --opset 11
                  
-                 # 以下为trt或end2end所需参数，如为onnx模式不用写
-                 --workspace 10   # 转换为tensorrt模型时最大使用的显存空间(GB)
-                 --fp16           # int8, best
+                 # 否则（onnx2trt模式或onnx2end2end模式）输入以下2个参数
+                 --onnx yolov7.onnx   # 其他模型的onnx文件
+                 --cfg yolov7.yaml    # 所需包含的信息见下文
                  
-                 # 以下为end2end所需参数(Batched_NMS中所需参数)，如为onnx或trt模式不用写
+                 # 以下所有参数如为onnx模式不用写
+                 --workspace 10   # 转换为tensorrt模型时最大使用的显存空间(GB)
+                 --fp16           # int8, best，模型精度使能
+                 
+                 # 以下为end2end模式和onnx2end2end模式所需参数(Batched_NMS中所需参数)，其他模式不用填写
                  --conf-thres 0.2   # 置信度阈值
                  --nms-thres 0.6    # NMS 目标框重合度阈值
                  --topk 2000        # 选置信度最高的前K个目标框作为NMS的输入
                  --keep 100         # NMS之后最多保留前K个置信度最高的结果
 ```
 
-不同模式导出不同模型，以yolov8s.pt为例
+其中，--cfg 指向的yaml文件应该包含如下信息
+```
+batch_size: 1                   # int        批大小
+pixel_range: 1                  # int        输入图像像素值范围， 1代表[0, 1]之间（YOLOv5,6,7等），255代表[0, 255]之间（YOLOX等）
+obj_conf_enabled: true          # bool       是否使用了前景预测（obj_conf）, 注意true和false开头字母用小写
+img_size: [640, 640]            # List[int]  输入图像 [高，宽]，注意不要反了
+input_name: ["input_0"]         # List[str]  onnx文件输入变量名
+output_name: ["output_0"]       # List[str]  onnx文件输出变量名
+names: ["person", "car", ...]   # List[str]  类别名称
+```
+
+不同模式导出不同模型，下面以yolov8s.pt为例
 
 - onnx模式
 ```shell
