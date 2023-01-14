@@ -89,7 +89,7 @@ python export.py --mode trt
 ```
 
 端到端的模型最后会增加如下结构
-![](assets/nms_netron.jpg)
+![](assets/end2end_netron.jpg)
 
 ### 推理
 
