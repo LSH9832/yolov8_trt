@@ -88,6 +88,9 @@ python export.py --mode trt
 ./yolo_export/yolov8s/yolov8s_end2end.pt     # 用于python部署
 ```
 
+端到端的模型最后会增加如下结构
+![](assets/nms_netron.jpg)
+
 ### 推理
 
 #### python
