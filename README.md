@@ -88,7 +88,7 @@ python export.py --mode trt
 ./yolo_export/yolov8s/yolov8s_end2end.pt     # 用于python部署
 ```
 
-端到端的模型最后会增加如下结构, 改自[https://github.com/DataXujing/YOLOv8](https://github.com/DataXujing/YOLOv8)
+端到端的模型最后会增加如下结构, 相关代码改自[https://github.com/DataXujing/YOLOv8](https://github.com/DataXujing/YOLOv8)
 ![](assets/end2end_netron.jpg)
 
 ### 推理
