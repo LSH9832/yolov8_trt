@@ -41,7 +41,10 @@ class TRTDetector:
         self.model.load_state_dict(ckpt["model"] if "model" in ckpt else ckpt)
         self.names = self.class_names = ckpt["names"] if "names" in ckpt else [str(i) for i in range(80)]
         self.input_size = ckpt["img_size"] if "img_size" in ckpt else kwargs["input_size"] if "input_size" in kwargs else [640, 640]
-        self.pixel_range = ckpt["pixel_range"] if "pixel_range" in ckpt else 1
+        self.pixel_range = ckpt["pixel_range"] if "pixel_range" in ckpt else int(input("please input pixel range(1 or 255):"))
+        self.obj_conf_enabled = ckpt["obj_conf_enabled"] if "obj_conf_enabled" in ckpt else bool(int(input("please input object confidence enabled(1 or 0):")))
+
+        # print(self.pixel_range, self.obj_conf_enabled)
 
         if isinstance(self.input_size, int):
             self.input_size = [self.input_size] * 2
@@ -67,7 +70,7 @@ class TRTDetector:
 
     def __postprocess(self, results, rs):
         # print(results, results.shape)
-        outs = postprocess(results, len(self.class_names), self.conf_thres, self.nms_thres, True, False)
+        outs = postprocess(results, len(self.class_names), self.conf_thres, self.nms_thres, True, self.obj_conf_enabled)
         for i, r in enumerate(rs):
             if outs[i] is not None:
                 outs[i][..., :4] /= r
@@ -200,6 +203,12 @@ class End2EndDetector:
         self.batch = self.ckpt["batch_size"]
         self.img_size = self.ckpt["img_size"]
         self.pixel_range = self.ckpt["pixel_range"]
+
+        x = torch.ones([self.batch, 3, *self.img_size]).cuda()
+        logger.info(f"tensorRT input shape: {x.shape}")
+        logger.info(f"tensorRT output shape: {[i.shape for i in self.model(x)]}")
+        logger.info("tensorRT model loaded")
+
         self.loaded = True
 
     def set_names(self, names):
