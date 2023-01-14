@@ -1,5 +1,19 @@
 # YOLOv8 TensorRT 快速部署工具
 
+## What is this
+
+- 通过yolov8官方代码训练生成的权重文件，均可通过此项目转换为tensorrt量化模型，同时支持常规模型以及端到端模型
+- 进一步的，同样支持输出维度结构为
+```python
+#                  批大小        预测框数量    x, y, w, h, obj_conf, label_scores
+outputs.shape = [batch_size, number_of_preds, 5 + number_of_classes]
+
+# 或者                                         x, y, w, h, scores
+outputs.shape = [batch_size, number_of_preds, 4 + number_of_classes]
+```
+的其他目标检测模型的onnx文件转换为tensorrt的engine文件和便于python使用的pt文件.
+
+
 ## 环境准备
 
 - CUDA, CuDNN, TensorRT（Toolkit）
