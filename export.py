@@ -205,9 +205,12 @@ def end2end(args, json_data):
               f"{' --fp16' if args.fp16 else ' --int8' if args.int8 else ' --best' if args.best else ''}"
 
     os.environ["CUDA_VISIBLE_DEVICES"] = f"{args.device}"
-    os.system(command)
+    if not os.path.isfile(f"{args.f}_end2end.engine"):
+    	os.system(command)
+    else:
+    	logger.warning(f"file {args.f}_end2end.engine already exist!")
 
-    if not os.path.isfile(f"{args.f}.engine"):
+    if not os.path.isfile(f"{args.f}_end2end.engine"):
         logger.error("Convert to engine file failed.")
         return
     else:
@@ -285,7 +288,10 @@ def onnx2trt(args=None):
 
     logger.info("start converting onnx to tensorRT engine file.")
     os.environ["CUDA_VISIBLE_DEVICES"] = f"{args.device}"
-    os.system(command)
+    if not osp.isfile(engine_file):
+    	os.system(command)
+    else:
+    	logger.warning(f"file engine_file already exist!")
 
     if not osp.isfile(engine_file):
         logger.error("tensorRT engine file convertion failed.")
